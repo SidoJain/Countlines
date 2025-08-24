@@ -1,6 +1,7 @@
 # Countlines
 
 This is an automation script to count the number of lines of all files in a subdirectory.  
+It optimizes file parsing using multi-threading.  
 
 ## How to use
 
