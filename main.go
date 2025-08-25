@@ -42,13 +42,13 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
+	root := flag.Arg(0)
+	patterns := flag.Args()[1:]
 	if flag.NArg() < 1 {
-        fmt.Fprintln(os.Stderr, "Usage: countlines <directory> [pattern1] [pattern2] ...")
+        fmt.Fprintf(os.Stderr, "Usage: %s <directory> [pattern1] [pattern2] ...\n", filepath.Base(root))
         os.Exit(1)
     }
 
-	root := flag.Arg(0)
-	patterns := flag.Args()[1:]
 	if len(patterns) == 0 {
 		patterns = []string{"*"}
 	}
