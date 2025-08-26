@@ -36,5 +36,5 @@ It optimizes file parsing using multi-threading.
 5. Use anywhere
 
     ```bash
-    countlines <directory> [pattern1] [pattern2] ...
+    countlines [-blacklist pattern/director] <directory> [pattern1] [pattern2] ...
     ```

@@ -10,6 +10,19 @@ import (
 	"sync"
 )
 
+type stringSlice []string
+
+var blacklist stringSlice
+
+func (s *stringSlice) String() string {
+    return fmt.Sprint(*s)
+}
+
+func (s *stringSlice) Set(value string) error {
+    *s = append(*s, value)
+    return nil
+}
+
 func countLines(filename string) (int64, error) {
     file, err := os.Open(filename)
     if err != nil {
@@ -38,14 +51,25 @@ func countLines(filename string) (int64, error) {
     return count, nil
 }
 
+func isBlacklisted(name string, blacklist []string) bool {
+    for _, pattern := range blacklist {
+        matched, err := filepath.Match(pattern, name)
+        if err == nil && matched {
+            return true
+        }
+    }
+    return false
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+    flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (can be specified multiple times)")
 	flag.Parse()
 	root := flag.Arg(0)
 	patterns := flag.Args()[1:]
 	if flag.NArg() < 1 {
-        fmt.Fprintf(os.Stderr, "Usage: %s <directory> [pattern1] [pattern2] ...\n", filepath.Base(root))
+		fmt.Fprintf(os.Stderr, "Usage: %s [-blacklist pattern] <directory> [pattern1] [pattern2] ...\n", filepath.Base(root))
         os.Exit(1)
     }
 
@@ -83,6 +107,13 @@ func main() {
 			}
 
 			base := filepath.Base(path)
+			if isBlacklisted(base, blacklist) {
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
 			for _, pattern := range patterns {
 				match, err := filepath.Match(pattern, base)
 				if err == nil && match {
