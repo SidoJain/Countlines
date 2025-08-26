@@ -67,12 +67,12 @@ func main() {
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (can be specified multiple times)")
 	flag.Parse()
 	root := flag.Arg(0)
-	patterns := flag.Args()[1:]
 	if flag.NArg() < 1 {
 		fmt.Fprintf(os.Stderr, "Usage: %s [-blacklist pattern] <directory> [pattern1] [pattern2] ...\n", filepath.Base(root))
         os.Exit(1)
     }
 
+	patterns := flag.Args()[1:]
 	if len(patterns) == 0 {
 		patterns = []string{"*"}
 	}
