@@ -46,10 +46,10 @@ func countLines(filename string) (int64, error) {
             break
         }
         if err != nil {
-            return count, err
+            return count + 1, err
         }
     }
-    return count, nil
+    return count + 1, nil
 }
 
 func isBlacklisted(name string, blacklist stringSlice) bool {
@@ -73,9 +73,11 @@ func cloneRepo(url string) (string, error) {
         return "", err
     }
     cmd := exec.Command("git", "clone", "--depth", "1", url, dir)
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
+	fmt.Printf("\033[90mCloning into '%s'...\033[0m\n", dir)
     if err := cmd.Run(); err != nil {
+		fmt.Println("\033[91mERROR: Repository not found.")
+		fmt.Println("fatal: Could not read from remote repository.")
+		fmt.Printf("\nmake sure you have the correct perms and the repo exists.\033[0m\n")
         os.RemoveAll(dir)
         return "", err
     }
@@ -93,14 +95,17 @@ func main() {
         os.Exit(1)
     }
 
+	isUrl := false
 	input := flag.Arg(0)
 	var root string
 	var patterns stringSlice
 	if isGitHubRepo(input) {
+		isUrl = true
 		tmp, err := cloneRepo(input)
 		if err != nil {
 			log.Fatalf("Error cloning repo: %v", err)
 		}
+		blacklist = append(blacklist, ".git")
 		defer os.RemoveAll(tmp)
 		root = tmp
 		patterns = flag.Args()[1:]
@@ -126,8 +131,12 @@ func main() {
 			defer wg.Done()
 			for filename := range filesChan {
 				lines, err := countLines(filename)
+				relPath, relErr := filepath.Rel(root, filename)
+				if relErr != nil {
+					relPath = filename
+				}
 				if err == nil {
-					fmt.Println("Read file:", filename)
+					fmt.Printf("\033[0;36mRead file: \033[0m%s\033[0m - \033[33m(%d)\033[0m\n", relPath, lines)
 					resultsChan <- lines
 				}
 			}
@@ -167,10 +176,13 @@ func main() {
 	}()
 
 	for lines := range resultsChan {
-		totalLines += lines + 1		// +1 for last new line
+		totalLines += lines
 		totalFiles++
 	}
 
-	fmt.Println("File Count: ", totalFiles)
-	fmt.Println("Line Count: ", totalLines)
+	fmt.Println("\033[1;34mFile Count:", totalFiles)
+	fmt.Println("\033[1;34mLine Count:", totalLines, "\033[0;37m")
+	if isUrl {
+		fmt.Println("\033[90mCloned repo has been deleted.\033[0m")
+	}
 }
