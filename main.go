@@ -13,6 +13,15 @@ import (
 	"sync"
 )
 
+const (
+    RESET      	= "\033[0m"
+    GRAY       	= "\033[90m"
+    BRIGHT_RED  = "\033[91m"
+    YELLOW     	= "\033[33m"
+    CYAN       	= "\033[0;36m"
+    BRIGHT_BLUE = "\033[1;34m"
+)
+
 type stringSlice []string
 
 func (str *stringSlice) String() string {
@@ -73,11 +82,11 @@ func cloneRepo(url string) (string, error) {
         return "", err
     }
     cmd := exec.Command("git", "clone", "--depth", "1", url, dir)
-	fmt.Printf("\033[90mCloning into '%s'...\033[0m\n", dir)
+	fmt.Printf("%sCloning into '%s'...%s\n", GRAY, dir, RESET)
     if err := cmd.Run(); err != nil {
-		fmt.Println("\033[91mERROR: Repository not found.")
+		fmt.Println(BRIGHT_RED + "ERROR: Repository not found.")
 		fmt.Println("fatal: Could not read from remote repository.")
-		fmt.Printf("\nmake sure you have the correct perms and the repo exists.\033[0m\n")
+		fmt.Printf("\nmake sure you have the correct perms and the repo exists.%s\n", RESET)
         os.RemoveAll(dir)
         return "", err
     }
@@ -148,7 +157,7 @@ func main() {
 					relPath = filename
 				}
 				if err == nil {
-					fmt.Printf("\033[0;36mRead file: \033[0m%s - \033[33m(%s)\033[0m\n", relPath, formatNumber(lines))
+					fmt.Printf("%sRead file:%s %s - %s(%s)%s\n", CYAN, RESET, relPath, YELLOW, formatNumber(lines), RESET)
 					resultsChan <- lines
 				}
 			}
@@ -192,9 +201,9 @@ func main() {
 		totalFiles++
 	}
 
-	fmt.Println("\033[1;34mFile Count:", formatNumber(totalFiles))
-	fmt.Println("Line Count:", formatNumber(totalLines), "\033[0m")
+	fmt.Println(BRIGHT_BLUE + "File Count:", formatNumber(totalFiles))
+	fmt.Println("Line Count:", formatNumber(totalLines), RESET)
 	if isUrl {
-		fmt.Println("\033[90mCloned repo has been deleted.\033[0m")
+		fmt.Println(GRAY + "Cloned repo has been deleted.", RESET)
 	}
 }
