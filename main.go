@@ -84,6 +84,18 @@ func cloneRepo(url string) (string, error) {
     return dir, nil
 }
 
+func formatNumber(n int64) string {
+    s := fmt.Sprintf("%d", n)
+    nStr := ""
+    for i, c := range s {
+        if i > 0 && (len(s) - i) % 3 == 0 {
+            nStr += ","
+        }
+        nStr += string(c)
+    }
+    return nStr
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -136,7 +148,7 @@ func main() {
 					relPath = filename
 				}
 				if err == nil {
-					fmt.Printf("\033[0;36mRead file: \033[0m%s\033[0m - \033[33m(%d)\033[0m\n", relPath, lines)
+					fmt.Printf("\033[0;36mRead file: \033[0m%s\033[0m - \033[33m(%s)\033[0m\n", relPath, formatNumber(lines))
 					resultsChan <- lines
 				}
 			}
@@ -180,8 +192,8 @@ func main() {
 		totalFiles++
 	}
 
-	fmt.Println("\033[1;34mFile Count:", totalFiles)
-	fmt.Println("\033[1;34mLine Count:", totalLines, "\033[0;37m")
+	fmt.Println("\033[1;34mFile Count:", formatNumber(totalFiles))
+	fmt.Println("\033[1;34mLine Count:", formatNumber(totalLines), "\033[0;37m")
 	if isUrl {
 		fmt.Println("\033[90mCloned repo has been deleted.\033[0m")
 	}
