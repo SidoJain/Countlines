@@ -15,12 +15,12 @@ import (
 
 type stringSlice []string
 
-func (s *stringSlice) String() string {
-    return fmt.Sprint(*s)
+func (str *stringSlice) String() string {
+    return fmt.Sprint(*str)
 }
 
-func (s *stringSlice) Set(value string) error {
-    *s = append(*s, value)
+func (str *stringSlice) Set(value string) error {
+    *str = append(*str, value)
     return nil
 }
 
@@ -85,13 +85,13 @@ func cloneRepo(url string) (string, error) {
 }
 
 func formatNumber(n int64) string {
-    s := fmt.Sprintf("%d", n)
+    str := fmt.Sprintf("%d", n)
     nStr := ""
-    for i, c := range s {
-        if i > 0 && (len(s) - i) % 3 == 0 {
+    for i, ch := range str {
+        if i > 0 && (len(str) - i) % 3 == 0 {
             nStr += ","
         }
-        nStr += string(c)
+        nStr += string(ch)
     }
     return nStr
 }
@@ -148,7 +148,7 @@ func main() {
 					relPath = filename
 				}
 				if err == nil {
-					fmt.Printf("\033[0;36mRead file: \033[0m%s\033[0m - \033[33m(%s)\033[0m\n", relPath, formatNumber(lines))
+					fmt.Printf("\033[0;36mRead file: \033[0m%s - \033[33m(%s)\033[0m\n", relPath, formatNumber(lines))
 					resultsChan <- lines
 				}
 			}
@@ -193,7 +193,7 @@ func main() {
 	}
 
 	fmt.Println("\033[1;34mFile Count:", formatNumber(totalFiles))
-	fmt.Println("\033[1;34mLine Count:", formatNumber(totalLines), "\033[0;37m")
+	fmt.Println("Line Count:", formatNumber(totalLines), "\033[0m")
 	if isUrl {
 		fmt.Println("\033[90mCloned repo has been deleted.\033[0m")
 	}
