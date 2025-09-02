@@ -4,15 +4,16 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sync"
 )
 
 type stringSlice []string
-
-var blacklist stringSlice
 
 func (s *stringSlice) String() string {
     return fmt.Sprint(*s)
@@ -51,7 +52,7 @@ func countLines(filename string) (int64, error) {
     return count, nil
 }
 
-func isBlacklisted(name string, blacklist []string) bool {
+func isBlacklisted(name string, blacklist stringSlice) bool {
     for _, pattern := range blacklist {
         matched, err := filepath.Match(pattern, name)
         if err == nil && matched {
@@ -61,20 +62,55 @@ func isBlacklisted(name string, blacklist []string) bool {
     return false
 }
 
+func isGitHubRepo(url string) bool {
+    match, _ := regexp.MatchString(`^https://github.com/.+/.+`, url)
+    return match
+}
+
+func cloneRepo(url string) (string, error) {
+    dir, err := os.MkdirTemp("", "countlines-")
+    if err != nil {
+        return "", err
+    }
+    cmd := exec.Command("git", "clone", "--depth", "1", url, dir)
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    if err := cmd.Run(); err != nil {
+        os.RemoveAll(dir)
+        return "", err
+    }
+    return dir, nil
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	var blacklist stringSlice
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (can be specified multiple times)")
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-blacklist pattern] <directory> [pattern1] [pattern2] ...\n")
+		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-blacklist pattern] <directory/url> [pattern1] [pattern2] ...\n")
         os.Exit(1)
     }
 
-	root := flag.Arg(0)
-	patterns := flag.Args()[1:]
+	input := flag.Arg(0)
+	var root string
+	var patterns stringSlice
+	if isGitHubRepo(input) {
+		tmp, err := cloneRepo(input)
+		if err != nil {
+			log.Fatalf("Error cloning repo: %v", err)
+		}
+		defer os.RemoveAll(tmp)
+		root = tmp
+		patterns = flag.Args()[1:]
+	} else {
+		root = input
+		patterns = flag.Args()[1:]
+	}
+
 	if len(patterns) == 0 {
-		patterns = []string{"*"}
+		patterns = stringSlice{"*"}
 	}
 
 	var totalLines int64
@@ -91,7 +127,6 @@ func main() {
 			for filename := range filesChan {
 				lines, err := countLines(filename)
 				if err == nil {
-					totalFiles++
 					fmt.Println("Read file:", filename)
 					resultsChan <- lines
 				}
@@ -132,7 +167,8 @@ func main() {
 	}()
 
 	for lines := range resultsChan {
-		totalLines += lines + 1
+		totalLines += lines + 1		// +1 for last new line
+		totalFiles++
 	}
 
 	fmt.Println("File Count: ", totalFiles)

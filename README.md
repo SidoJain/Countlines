@@ -1,7 +1,7 @@
 # Countlines
 
-This is an automation script to count the number of lines of all files in a subdirectory.  
-It optimizes file parsing using multi-threading.  
+This is an automation script to count the number of lines of all files in a subdirectory. Also usable for github repos.  
+It optimizes file parsing using multi-threading depending on physical thread count.  
 
 ## How to use
 
@@ -36,5 +36,5 @@ It optimizes file parsing using multi-threading.
 5. Use anywhere
 
     ```bash
-    countlines [-blacklist pattern/director] <directory> [pattern1] [pattern2] ...
+    countlines [-blacklist pattern/director] <directory/URL> [pattern1] [pattern2] ...
     ```
