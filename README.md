@@ -3,6 +3,17 @@
 This is an automation script to count the number of lines of all files in a subdirectory. Also usable for github repos.  
 It optimizes file parsing using multi-threading depending on physical thread count.  
 
+## Optional Flags
+
+1. `-help`:
+    Show flag options.  
+
+2. `-blacklist`:
+    Allows blacklisting of directories / files to be excluded from the count.  
+
+3. `-no-color`:
+    Remove color output in the terminal.  
+
 ## How to use
 
 1. Have the Go Compiler.
@@ -36,5 +47,5 @@ It optimizes file parsing using multi-threading depending on physical thread cou
 5. Use anywhere
 
     ```bash
-    countlines [-blacklist pattern/director] <directory/URL> [pattern1] [pattern2] ...
+    countlines [-flags] <directory/URL> [pattern1] [pattern2] ...
     ```

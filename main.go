@@ -76,7 +76,7 @@ func isGitHubRepo(url string) bool {
     return match
 }
 
-func cloneRepo(url string) (string, error) {
+func cloneRepo(url string, RESET string, GRAY string, BRIGHT_RED string) (string, error) {
     dir, err := os.MkdirTemp("", "countlines-")
     if err != nil {
         return "", err
@@ -108,13 +108,28 @@ func formatNumber(n int64) string {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	noColor := flag.Bool("no-color", false, "disable colored output")
 	var blacklist stringSlice
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (can be specified multiple times)")
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-blacklist pattern] <directory/url> [pattern1] [pattern2] ...\n")
+		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-flags] <directory/url> [pattern1] [pattern2] ...\n")
         os.Exit(1)
     }
+
+	getColor := func(color string) string {
+        if *noColor {
+            return ""
+        }
+        return color
+    }
+
+    RESET := getColor("\033[0m")
+    GRAY := getColor("\033[90m")
+    BRIGHT_RED := getColor("\033[91m")
+    YELLOW := getColor("\033[33m")
+    CYAN := getColor("\033[0;36m")
+    BRIGHT_BLUE := getColor("\033[1;34m")
 
 	isUrl := false
 	input := flag.Arg(0)
@@ -122,7 +137,7 @@ func main() {
 	var patterns stringSlice
 	if isGitHubRepo(input) {
 		isUrl = true
-		tmp, err := cloneRepo(input)
+		tmp, err := cloneRepo(input, RESET, GRAY, BRIGHT_RED)
 		if err != nil {
 			log.Fatalf("Error cloning repo: %v", err)
 		}
