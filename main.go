@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"sync"
+	"strings"
 )
 
 const (
@@ -29,7 +30,13 @@ func (str *stringSlice) String() string {
 }
 
 func (str *stringSlice) Set(value string) error {
-    *str = append(*str, value)
+    parts := strings.SplitSeq(value, ",")
+    for part := range parts {
+        trimmed := strings.TrimSpace(part)
+        if trimmed != "" {
+            *str = append(*str, trimmed)
+        }
+    }
     return nil
 }
 
@@ -110,7 +117,7 @@ func main() {
 
 	noColor := flag.Bool("no-color", false, "disable colored output")
 	var blacklist stringSlice
-    flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (can be specified multiple times)")
+    flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (comma separated)")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-flags] <directory/url> [pattern1] [pattern2] ...\n")
