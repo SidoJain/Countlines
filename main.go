@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
+	"bufio"
 	"log"
 	"os"
 	"os/exec"
@@ -74,23 +74,13 @@ func countLines(filename string) (int64, error) {
     }
     defer file.Close()
 
+    scanner := bufio.NewScanner(file)
     var count int64
-    buf := make([]byte, 32 * 1024)
-    for {
-        n, err := file.Read(buf)
-        if n > 0 {
-            for i := range n {
-                if buf[i] == '\n' {
-                    count++
-                }
-            }
-        }
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            return count, err
-        }
+    for scanner.Scan() {
+        count++
+    }
+    if err := scanner.Err(); err != nil {
+        return count, err
     }
     return count, nil
 }
