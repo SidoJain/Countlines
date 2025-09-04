@@ -14,14 +14,14 @@ import (
 	"strings"
 )
 
-const (
-    RESET      	= "\033[0m"
-    GRAY       	= "\033[90m"
-    BRIGHT_RED  = "\033[91m"
-    YELLOW     	= "\033[33m"
-    CYAN       	= "\033[0;36m"
-    BRIGHT_BLUE = "\033[1;34m"
-)
+type colors struct {
+    RESET        string
+    GRAY        string
+    BRIGHT_RED   string
+    YELLOW       string
+    CYAN         string
+    BRIGHT_BLUE  string
+}
 
 type stringSlice []string
 
@@ -38,6 +38,26 @@ func (str *stringSlice) Set(value string) error {
         }
     }
     return nil
+}
+
+func getColors(noColor bool) colors {
+    var c colors
+    if noColor {
+        c.RESET = ""
+        c.GRAY = ""
+        c.BRIGHT_RED = ""
+        c.YELLOW = ""
+        c.CYAN = ""
+        c.BRIGHT_BLUE = ""
+    } else {
+        c.RESET = "\033[0m"
+        c.GRAY = "\033[90m"
+        c.BRIGHT_RED = "\033[91m"
+        c.YELLOW = "\033[33m"
+        c.CYAN = "\033[0;36m"
+        c.BRIGHT_BLUE = "\033[1;34m"
+    }
+    return c
 }
 
 func countLines(filename string) (int64, error) {
@@ -150,27 +170,14 @@ func main() {
         os.Exit(1)
     }
 
-	getColor := func(color string) string {
-        if *noColor {
-            return ""
-        }
-        return color
-    }
-
-    RESET := getColor(RESET)
-    GRAY := getColor(GRAY)
-    BRIGHT_RED := getColor(BRIGHT_RED)
-    YELLOW := getColor(YELLOW)
-    CYAN := getColor(CYAN)
-    BRIGHT_BLUE := getColor(BRIGHT_BLUE)
-
+	colors := getColors(*noColor)
 	isUrl := false
 	input := flag.Arg(0)
 	var root string
 	var patterns stringSlice
 	if isGitHubRepo(input) {
 		isUrl = true
-		tmp, err := cloneRepo(input, *branch, *commit, RESET, GRAY, BRIGHT_RED)
+		tmp, err := cloneRepo(input, *branch, *commit, colors.RESET, colors.GRAY, colors.BRIGHT_RED)
 		if err != nil {
 			log.Fatalf("Error cloning repo: %v", err)
 		}
@@ -205,7 +212,7 @@ func main() {
 					relPath = filename
 				}
 				if err == nil {
-					fmt.Printf("%sRead file:%s %s - %s(%s)%s\n", CYAN, RESET, relPath, YELLOW, formatNumber(lines), RESET)
+					fmt.Printf("%sRead file:%s %s - %s(%s)%s\n", colors.CYAN, colors.RESET, relPath, colors.YELLOW, formatNumber(lines), colors.RESET)
 					resultsChan <- lines
 				}
 			}
@@ -249,9 +256,9 @@ func main() {
 		totalFiles++
 	}
 
-	fmt.Println(BRIGHT_BLUE + "File Count:", formatNumber(totalFiles))
-	fmt.Println("Line Count:", formatNumber(totalLines), RESET)
+	fmt.Println(colors.BRIGHT_BLUE + "File Count:", formatNumber(totalFiles))
+	fmt.Println("Line Count:", formatNumber(totalLines), colors.RESET)
 	if isUrl {
-		fmt.Println(GRAY + "Cloned repo has been deleted.", RESET)
+		fmt.Println(colors.GRAY + "Cloned repo has been deleted.", colors.RESET)
 	}
 }
