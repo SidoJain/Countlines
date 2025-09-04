@@ -14,6 +14,12 @@ It optimizes file parsing using multi-threading depending on physical thread cou
 3. `-no-color`:
     Remove color output in the terminal.  
 
+4. `-branch`:
+    Allows specification of branch of github repo.  
+
+5. `-commit`:
+    Allows specification of commit of github repo.  
+
 ## How to use
 
 1. Have the Go Compiler.

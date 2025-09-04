@@ -83,19 +83,43 @@ func isGitHubRepo(url string) bool {
     return match
 }
 
-func cloneRepo(url string, RESET string, GRAY string, BRIGHT_RED string) (string, error) {
+func cloneRepo(url string, branch string, commit string, RESET string, GRAY string, BRIGHT_RED string) (string, error) {
     dir, err := os.MkdirTemp("", "countlines-")
     if err != nil {
         return "", err
     }
-    cmd := exec.Command("git", "clone", "--depth", "1", url, dir)
+
+	var cloneArgs []string
+    if commit == "" && branch != "" {
+        cloneArgs = []string{"clone", "--depth", "1", "-b", branch, "--single-branch", url, dir}
+    } else {
+        cloneArgs = []string{"clone", url, dir}
+    }
+
 	fmt.Printf("%sCloning into '%s'...%s\n", GRAY, dir, RESET)
+    cmd := exec.Command("git", cloneArgs...)
     if err := cmd.Run(); err != nil {
-		fmt.Println(BRIGHT_RED + "ERROR: Repository not found.")
-		fmt.Println("fatal: Could not read from remote repository.")
-		fmt.Printf("\nmake sure you have the correct perms and the repo exists.%s\n", RESET)
+        fmt.Println(BRIGHT_RED + "ERROR: Failed to clone repository.", RESET)
         os.RemoveAll(dir)
         return "", err
+    }
+
+	if branch != "" && commit != "" {
+        cmdBranch := exec.Command("git", "-C", dir, "checkout", branch)
+        if err := cmdBranch.Run(); err != nil {
+            fmt.Println(BRIGHT_RED + "ERROR: Failed to checkout branch.", RESET)
+            os.RemoveAll(dir)
+            return "", err
+        }
+    }
+
+	if commit != "" {
+        cmdCommit := exec.Command("git", "-C", dir, "checkout", commit)
+        if err := cmdCommit.Run(); err != nil {
+            fmt.Println(BRIGHT_RED + "ERROR: Failed to checkout commit.", RESET)
+            os.RemoveAll(dir)
+            return "", err
+        }
     }
     return dir, nil
 }
@@ -115,8 +139,10 @@ func formatNumber(n int64) string {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	noColor := flag.Bool("no-color", false, "disable colored output")
 	var blacklist stringSlice
+	noColor := flag.Bool("no-color", false, "disable colored output")
+	branch := flag.String("branch", "", "git branch to clone (for GitHub repos)")
+    commit := flag.String("commit", "", "git commit (SHA) to checkout (for GitHub repos)")
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (comma separated)")
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -131,12 +157,12 @@ func main() {
         return color
     }
 
-    RESET := getColor("\033[0m")
-    GRAY := getColor("\033[90m")
-    BRIGHT_RED := getColor("\033[91m")
-    YELLOW := getColor("\033[33m")
-    CYAN := getColor("\033[0;36m")
-    BRIGHT_BLUE := getColor("\033[1;34m")
+    RESET := getColor(RESET)
+    GRAY := getColor(GRAY)
+    BRIGHT_RED := getColor(BRIGHT_RED)
+    YELLOW := getColor(YELLOW)
+    CYAN := getColor(CYAN)
+    BRIGHT_BLUE := getColor(BRIGHT_BLUE)
 
 	isUrl := false
 	input := flag.Arg(0)
@@ -144,7 +170,7 @@ func main() {
 	var patterns stringSlice
 	if isGitHubRepo(input) {
 		isUrl = true
-		tmp, err := cloneRepo(input, RESET, GRAY, BRIGHT_RED)
+		tmp, err := cloneRepo(input, *branch, *commit, RESET, GRAY, BRIGHT_RED)
 		if err != nil {
 			log.Fatalf("Error cloning repo: %v", err)
 		}
