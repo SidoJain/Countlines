@@ -11,8 +11,11 @@ import (
 	"regexp"
 	"runtime"
 	"sync"
+	"sort"
 	"strings"
 )
+
+type stringSlice []string
 
 type colors struct {
     RESET        string
@@ -23,7 +26,10 @@ type colors struct {
     BRIGHT_BLUE  string
 }
 
-type stringSlice []string
+type fileLineInfo struct {
+	path  string
+	lines int64
+}
 
 func (str *stringSlice) String() string {
     return fmt.Sprint(*str)
@@ -82,10 +88,10 @@ func countLines(filename string) (int64, error) {
             break
         }
         if err != nil {
-            return count + 1, err
+            return count, err
         }
     }
-    return count + 1, nil
+    return count, nil
 }
 
 func isBlacklisted(name string, blacklist stringSlice) bool {
@@ -198,10 +204,10 @@ func main() {
 	var totalFiles int64
 	var wg sync.WaitGroup
 	filesChan := make(chan string, 100)
-	resultsChan := make(chan int64, 100)
+	resultsChan := make(chan fileLineInfo, 100)
 
 	// Worker goroutines to count lines
-	for range runtime.NumCPU() {
+	for range make([]struct{}, runtime.NumCPU()) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -213,7 +219,7 @@ func main() {
 				}
 				if err == nil {
 					fmt.Printf("%sRead file:%s %s - %s(%s)%s\n", colors.CYAN, colors.RESET, relPath, colors.YELLOW, formatNumber(lines), colors.RESET)
-					resultsChan <- lines
+					resultsChan <- fileLineInfo{path: filename, lines: lines}
 				}
 			}
 		}()
@@ -251,13 +257,51 @@ func main() {
 		close(resultsChan)
 	}()
 
-	for lines := range resultsChan {
-		totalLines += lines
+	linesByExt := make(map[string]int64)
+	filesByExt := make(map[string]int64)
+	namesUsed := make(map[string]struct{})
+	getLabel := func(path string) string {
+		ext := filepath.Ext(path)
+		if ext == "" {
+			return filepath.Base(path)
+		}
+		return ext
+	}
+
+	for fileInfo := range resultsChan {
+		totalLines += fileInfo.lines
 		totalFiles++
+
+		label := getLabel(fileInfo.path)
+		if _, exists := namesUsed[fileInfo.path]; !exists {
+			linesByExt[label] += fileInfo.lines
+			filesByExt[label]++
+			namesUsed[fileInfo.path] = struct{}{}
+		}
+	}
+
+	maxLen := 0
+	for label := range linesByExt {
+		if len(label) > maxLen {
+			maxLen = len(label)
+		}
 	}
 
 	fmt.Println(colors.BRIGHT_BLUE + "File Count:", formatNumber(totalFiles))
 	fmt.Println("Line Count:", formatNumber(totalLines), colors.RESET)
+
+    fmt.Println()
+    fmt.Println("Lines by file extension:")
+    exts := make([]string, 0, len(linesByExt))
+	for label := range linesByExt {
+		exts = append(exts, label)
+	}
+    sort.Strings(exts)
+	formatStr := fmt.Sprintf("%s  %%-%ds %s: %%-12s %s(%%d files)%s\n", colors.CYAN, maxLen, colors.RESET, colors.YELLOW, colors.RESET)
+    for _, label := range exts {
+		fmt.Printf(formatStr, label, formatNumber(linesByExt[label]), filesByExt[label])
+	}
+
 	if isUrl {
 		fmt.Println(colors.GRAY + "Cloned repo has been deleted.", colors.RESET)
 	}
