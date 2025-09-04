@@ -20,6 +20,9 @@ It optimizes file parsing using multi-threading depending on physical thread cou
 5. `-commit`:
     Allows specification of commit of github repo.  
 
+6. `-output-csv`:
+    Creates a csv file (output.csv) in current directory to store results.  
+
 ## How to use
 
 1. Have the Go Compiler.

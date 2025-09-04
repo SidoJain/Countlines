@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sort"
 	"strings"
+	"encoding/csv"
 )
 
 type stringSlice []string
@@ -166,6 +167,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var blacklist stringSlice
+	outputCsv := flag.Bool("output-csv", false, "write output summary to output.csv file")
 	noColor := flag.Bool("no-color", false, "disable colored output")
 	branch := flag.String("branch", "", "git branch to clone (for GitHub repos)")
     commit := flag.String("commit", "", "git commit (SHA) to checkout (for GitHub repos)")
@@ -301,6 +303,27 @@ func main() {
     for _, label := range exts {
 		fmt.Printf(formatStr, label, formatNumber(linesByExt[label]), filesByExt[label])
 	}
+
+	if *outputCsv {
+        f, err := os.Create("output.csv")
+        if err != nil {
+            log.Fatalf("Failed to create output.csv: %v", err)
+        }
+        defer f.Close()
+
+        writer := csv.NewWriter(f)
+        defer writer.Flush()
+
+        writer.Write([]string{"Total Files", formatNumber(totalFiles)})
+        writer.Write([]string{"Total Lines", formatNumber(totalLines)})
+        writer.Write([]string{})
+        writer.Write([]string{"Extension/File", "Line Count", "File Count"})
+
+        for _, label := range exts {
+            writer.Write([]string{label, fmt.Sprintf("%d", linesByExt[label]), fmt.Sprintf("%d", filesByExt[label])})
+        }
+        fmt.Println("Output saved to output.csv")
+    }
 
 	if isUrl {
 		fmt.Println(colors.GRAY + "Cloned repo has been deleted.", colors.RESET)
