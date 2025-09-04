@@ -79,10 +79,7 @@ func countLines(filename string) (int64, error) {
     for scanner.Scan() {
         count++
     }
-    if err := scanner.Err(); err != nil {
-        return count, err
-    }
-    return count, nil
+    return count, scanner.Err()
 }
 
 func isBlacklisted(name string, blacklist stringSlice) bool {
@@ -283,8 +280,7 @@ func main() {
 	fmt.Println(colors.BLUE + "File Count:", formatNumber(totalFiles))
 	fmt.Println("Line Count:", formatNumber(totalLines), colors.RESET)
 
-    fmt.Println()
-    fmt.Println("Lines by file extension:")
+    fmt.Printf("\nLines by file extension:\n")
     exts := make([]string, 0, len(linesByExt))
 	for label := range linesByExt {
 		exts = append(exts, label)
@@ -296,13 +292,13 @@ func main() {
 	}
 
 	if *outputCsv {
-        f, err := os.Create("output.csv")
+        file, err := os.Create("output.csv")
         if err != nil {
             log.Fatalf("Failed to create output.csv: %v", err)
         }
-        defer f.Close()
+        defer file.Close()
 
-        writer := csv.NewWriter(f)
+        writer := csv.NewWriter(file)
         defer writer.Flush()
 
         writer.Write([]string{"Total Files", formatNumber(totalFiles)})
