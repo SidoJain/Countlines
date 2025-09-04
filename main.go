@@ -19,12 +19,12 @@ import (
 type stringSlice []string
 
 type colors struct {
-    RESET        string
+    RESET       string
     GRAY        string
-    BRIGHT_RED   string
-    YELLOW       string
-    CYAN         string
-    BRIGHT_BLUE  string
+    RED   		string
+    YELLOW      string
+    CYAN        string
+    BLUE	  	string
 }
 
 type fileLineInfo struct {
@@ -50,19 +50,19 @@ func (str *stringSlice) Set(value string) error {
 func getColors(noColor bool) colors {
     var c colors
     if noColor {
-        c.RESET = ""
-        c.GRAY = ""
-        c.BRIGHT_RED = ""
+        c.RESET  = ""
+        c.GRAY 	 = ""
+        c.RED 	 = ""
         c.YELLOW = ""
-        c.CYAN = ""
-        c.BRIGHT_BLUE = ""
+        c.CYAN 	 = ""
+        c.BLUE 	 = ""
     } else {
-        c.RESET = "\033[0m"
-        c.GRAY = "\033[90m"
-        c.BRIGHT_RED = "\033[91m"
+        c.RESET  = "\033[0m"
+        c.GRAY   = "\033[90m"
+        c.RED 	 = "\033[91m"
         c.YELLOW = "\033[33m"
-        c.CYAN = "\033[0;36m"
-        c.BRIGHT_BLUE = "\033[1;34m"
+        c.CYAN 	 = "\033[0;36m"
+        c.BLUE 	 = "\033[1;34m"
     }
     return c
 }
@@ -100,11 +100,12 @@ func isGitHubRepo(url string) bool {
     return match
 }
 
-func cloneRepo(url string, branch string, commit string, RESET string, GRAY string, BRIGHT_RED string) (string, error) {
+func cloneRepo(url string, branch string, commit string, noColor bool) (string, error) {
     dir, err := os.MkdirTemp("", "countlines-")
     if err != nil {
         return "", err
     }
+	color := getColors(noColor)
 
 	var cloneArgs []string
     if commit == "" && branch != "" {
@@ -113,10 +114,10 @@ func cloneRepo(url string, branch string, commit string, RESET string, GRAY stri
         cloneArgs = []string{"clone", url, dir}
     }
 
-	fmt.Printf("%sCloning into '%s'...%s\n", GRAY, dir, RESET)
+	fmt.Printf("%sCloning into '%s'...%s\n", color.GRAY, dir, color.RESET)
     cmd := exec.Command("git", cloneArgs...)
     if err := cmd.Run(); err != nil {
-        fmt.Println(BRIGHT_RED + "ERROR: Failed to clone repository.", RESET)
+        fmt.Println(color.RED + "ERROR: Failed to clone repository.", color.RESET)
         os.RemoveAll(dir)
         return "", err
     }
@@ -124,7 +125,7 @@ func cloneRepo(url string, branch string, commit string, RESET string, GRAY stri
 	if branch != "" && commit != "" {
         cmdBranch := exec.Command("git", "-C", dir, "checkout", branch)
         if err := cmdBranch.Run(); err != nil {
-            fmt.Println(BRIGHT_RED + "ERROR: Failed to checkout branch.", RESET)
+            fmt.Println(color.RED + "ERROR: Failed to checkout branch.", color.RESET)
             os.RemoveAll(dir)
             return "", err
         }
@@ -133,7 +134,7 @@ func cloneRepo(url string, branch string, commit string, RESET string, GRAY stri
 	if commit != "" {
         cmdCommit := exec.Command("git", "-C", dir, "checkout", commit)
         if err := cmdCommit.Run(); err != nil {
-            fmt.Println(BRIGHT_RED + "ERROR: Failed to checkout commit.", RESET)
+            fmt.Println(color.RED + "ERROR: Failed to checkout commit.", color.RESET)
             os.RemoveAll(dir)
             return "", err
         }
@@ -175,7 +176,7 @@ func main() {
 	var patterns stringSlice
 	if isGitHubRepo(input) {
 		isUrl = true
-		tmp, err := cloneRepo(input, *branch, *commit, colors.RESET, colors.GRAY, colors.BRIGHT_RED)
+		tmp, err := cloneRepo(input, *branch, *commit, *noColor)
 		if err != nil {
 			log.Fatalf("Error cloning repo: %v", err)
 		}
@@ -279,7 +280,7 @@ func main() {
 		}
 	}
 
-	fmt.Println(colors.BRIGHT_BLUE + "File Count:", formatNumber(totalFiles))
+	fmt.Println(colors.BLUE + "File Count:", formatNumber(totalFiles))
 	fmt.Println("Line Count:", formatNumber(totalLines), colors.RESET)
 
     fmt.Println()
