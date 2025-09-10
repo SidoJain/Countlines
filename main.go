@@ -162,7 +162,8 @@ func main() {
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (comma separated)")
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-flags] <directory/url> [pattern1] [pattern2] ...\n")
+		fmt.Fprintf(os.Stderr, "Usage: countlines.exe [-flags] <directory/url> [pattern1] [pattern2] ...\nFlags:\n")
+		flag.PrintDefaults()
         os.Exit(1)
     }
 
