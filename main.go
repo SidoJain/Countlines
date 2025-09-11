@@ -157,6 +157,7 @@ func main() {
 	var blacklist stringSlice
 	outputCsv := flag.Bool("output-csv", false, "write output summary to output.csv file")
 	noColor := flag.Bool("no-color", false, "disable colored output")
+	showExts := flag.Bool("show-exts", false, "show all encountered file extensions")
 	branch := flag.String("branch", "", "git branch to clone (for GitHub repos)")
     commit := flag.String("commit", "", "git commit (SHA) to checkout (for GitHub repos)")
     flag.Var(&blacklist, "blacklist", "patterns of files or directories to exclude (comma separated)")
@@ -194,6 +195,7 @@ func main() {
 	var totalLines int64
 	var totalFiles int64
 	var wg sync.WaitGroup
+	encounteredExts := make(map[string]struct{})
 	filesChan := make(chan string, 100)
 	resultsChan := make(chan fileLineInfo, 100)
 
@@ -224,6 +226,16 @@ func main() {
 			}
 
 			base := filepath.Base(path)
+			if *showExts {
+				if !info.IsDir() {
+					ext := filepath.Ext(path)
+					if ext == "" && (base == "Makefile") || (base == "Dockerfile") {
+						ext = base
+					}
+					encounteredExts[ext] = struct{}{}
+				}
+			}
+
 			if isBlacklisted(base, blacklist) {
 				if info.IsDir() {
 					return filepath.SkipDir
@@ -312,6 +324,22 @@ func main() {
         }
         fmt.Println("Output saved to output.csv")
     }
+
+	if *showExts {
+		fmt.Printf("\nEncountered extension types:")
+		sortedExts := make([]string, 0, len(encounteredExts))
+		for ext := range encounteredExts {
+			sortedExts = append(sortedExts, ext)
+		}
+		sort.Strings(sortedExts)
+		for _, ext := range sortedExts {
+			if _, counted := linesByExt[ext]; counted {
+				fmt.Printf("%s%s%s\n", colors.BLUE, ext, colors.RESET)
+			} else {
+				fmt.Printf("%s%s%s\n", colors.RED, ext, colors.RESET)
+			}
+		}
+	}
 
 	if isUrl {
 		fmt.Println(colors.GRAY + "Cloned repo has been deleted.", colors.RESET)
