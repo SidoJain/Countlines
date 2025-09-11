@@ -334,9 +334,9 @@ func main() {
 		sort.Strings(sortedExts)
 		for _, ext := range sortedExts {
 			if _, counted := linesByExt[ext]; counted {
-				fmt.Printf("%s%s%s\n", colors.BLUE, ext, colors.RESET)
+				fmt.Printf("%s  %s%s\n", colors.BLUE, ext, colors.RESET)
 			} else {
-				fmt.Printf("%s%s%s\n", colors.RED, ext, colors.RESET)
+				fmt.Printf("%s  %s%s\n", colors.RED, ext, colors.RESET)
 			}
 		}
 	}
