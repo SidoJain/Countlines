@@ -293,7 +293,9 @@ func main() {
 	fmt.Println(colors.BLUE + "File Count:", formatNumber(totalFiles))
 	fmt.Println("Line Count:", formatNumber(totalLines), colors.RESET)
 
-    fmt.Printf("\nLines by file extension:\n")
+	if totalFiles != 0 {
+		fmt.Printf("\nLines by file extension:\n")
+	}
     exts := make([]string, 0, len(linesByExt))
 	for label := range linesByExt {
 		exts = append(exts, label)
